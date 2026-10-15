@@ -1,0 +1,57 @@
+# Example single-host application deployment behind an HTTPS reverse proxy.
+# Supply values through the deployment platform or a private --env-file outside the checkout.
+name: new-karachi-production
+x-api-environment: &api-environment
+  NODE_ENV: production
+  DATABASE_URL: ${DATABASE_URL:?Set the production DATABASE_URL securely}
+  SESSION_SECRET: ${SESSION_SECRET:?Set a production-specific SESSION_SECRET of at least 32 characters}
+  APP_ORIGIN: ${APP_ORIGIN:?Set the public HTTPS application origin}
+  API_HOST: 0.0.0.0
+  API_PORT: 4000
+  TRUST_PROXY: 'true'
+
+services:
+  migrate:
+    image: nk-operations-migrate:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migration
+    environment: *api-environment
+    profiles: [release]
+    restart: 'no'
+    init: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  api:
+    image: nk-operations-api:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    environment: *api-environment
+    expose: ['4000']
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    stop_grace_period: 15s
+
+  web:
+    image: nk-operations-web:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports: ['127.0.0.1:8080:8080']
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]

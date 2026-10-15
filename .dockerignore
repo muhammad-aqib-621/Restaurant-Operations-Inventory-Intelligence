@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+**/node_modules
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+.cache
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+attachments

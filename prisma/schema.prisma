@@ -1,0 +1,527 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  CASHIER
+  KITCHEN
+  INVENTORY
+}
+
+enum Unit {
+  G
+  KG
+  ML
+  L
+  PIECE
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum PurchaseStatus {
+  DRAFT
+  ORDERED
+  PARTIAL
+  RECEIVED
+  CANCELLED
+}
+
+enum MovementType {
+  OPENING
+  PURCHASE
+  CONSUMPTION
+  WASTE
+  ADJUSTMENT
+  COUNT
+  REVERSAL
+}
+
+enum ReservationStatus {
+  ACTIVE
+  CONSUMED
+  RELEASED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentType {
+  PAYMENT
+  REFUND
+}
+
+model User {
+  id                  String              @id @default(cuid())
+  name                String
+  email               String              @unique
+  passwordHash        String
+  role                Role
+  active              Boolean             @default(true)
+  createdAt           DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(3)
+  recipeVersions      RecipeVersion[]
+  orders              Order[]
+  payments            Payment[]
+  inventoryMovements  InventoryMovement[]
+  purchaseOrders      PurchaseOrder[]
+  goodsReceipts       GoodsReceipt[]
+  createdWaste        WasteRecord[]       @relation("WasteCreatedBy")
+  approvedWaste       WasteRecord[]       @relation("WasteApprovedBy")
+  createdAdjustments  StockAdjustment[]   @relation("AdjustmentCreatedBy")
+  approvedAdjustments StockAdjustment[]   @relation("AdjustmentApprovedBy")
+  createdCounts       StockCount[]        @relation("CountCreatedBy")
+  approvedCounts      StockCount[]        @relation("CountApprovedBy")
+  auditLogs           AuditLog[]
+  notificationReads   NotificationRead[]
+
+  @@index([role, active])
+}
+
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json
+  expire DateTime @db.Timestamptz(6)
+
+  @@index([expire])
+}
+
+model RestaurantSettings {
+  id                   String   @id @default("primary")
+  name                 String   @db.VarChar(120)
+  currency             String   @default("PKR") @db.Char(3)
+  timezone             String   @default("Asia/Karachi") @db.VarChar(64)
+  taxRate              Decimal  @default(0) @db.Decimal(7, 6)
+  cashierDiscountLimit Decimal  @default(0.05) @db.Decimal(7, 6)
+  paymentMethods       String[] @default(["CASH", "CARD", "BANK_TRANSFER"])
+  isDemo               Boolean  @default(false)
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Supplier {
+  id             String          @id @default(cuid())
+  name           String
+  contactName    String?
+  email          String?
+  phone          String?
+  address        String?
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+  ingredients    Ingredient[]
+  purchaseOrders PurchaseOrder[]
+
+  @@index([active, name])
+}
+
+model Ingredient {
+  id                  String                 @id @default(cuid())
+  name                String
+  sku                 String                 @unique
+  category            String
+  unit                Unit
+  onHand              Decimal                @default(0) @db.Decimal(18, 6)
+  reserved            Decimal                @default(0) @db.Decimal(18, 6)
+  minimumStock        Decimal                @default(0) @db.Decimal(18, 6)
+  unitCost            Decimal                @default(0) @db.Decimal(18, 6)
+  preferredSupplierId String?
+  expiresAt           DateTime?              @db.Timestamptz(3)
+  storageNotes        String?
+  active              Boolean                @default(true)
+  createdAt           DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime               @updatedAt @db.Timestamptz(3)
+  preferredSupplier   Supplier?              @relation(fields: [preferredSupplierId], references: [id], onDelete: Restrict)
+  movements           InventoryMovement[]
+  reservations        InventoryReservation[]
+  recipeIngredients   RecipeIngredient[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  wasteRecords        WasteRecord[]
+  stockAdjustments    StockAdjustment[]
+  stockCountItems     StockCountItem[]
+
+  @@index([preferredSupplierId])
+  @@index([active, category])
+  @@index([expiresAt])
+}
+
+model MenuCategory {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  sortOrder Int        @default(0)
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id          String       @id @default(cuid())
+  categoryId  String
+  name        String
+  description String?
+  imageUrl    String?
+  price       Decimal      @db.Decimal(14, 2)
+  active      Boolean      @default(true)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  recipe      Recipe?
+  orderItems  OrderItem[]
+
+  @@index([categoryId, active])
+}
+
+model Recipe {
+  id         String          @id @default(cuid())
+  menuItemId String          @unique
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+  menuItem   MenuItem        @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  versions   RecipeVersion[]
+}
+
+model RecipeVersion {
+  id          String             @id @default(cuid())
+  recipeId    String
+  version     Int
+  createdById String
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  recipe      Recipe             @relation(fields: [recipeId], references: [id], onDelete: Restrict)
+  createdBy   User               @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  ingredients RecipeIngredient[]
+  orderItems  OrderItem[]
+
+  @@unique([recipeId, version])
+  @@index([createdById])
+}
+
+model RecipeIngredient {
+  id              String        @id @default(cuid())
+  recipeVersionId String
+  ingredientId    String
+  quantity        Decimal       @db.Decimal(18, 6)
+  recipeVersion   RecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
+  ingredient      Ingredient    @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+
+  @@unique([recipeVersionId, ingredientId])
+  @@index([ingredientId])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  orders    Order[]
+
+  @@index([phone])
+}
+
+model Order {
+  id            String                 @id @default(cuid())
+  number        Int                    @unique @default(autoincrement())
+  status        OrderStatus            @default(PENDING)
+  customerId    String?
+  notes         String?
+  subtotal      Decimal                @default(0) @db.Decimal(14, 2)
+  discount      Decimal                @default(0) @db.Decimal(14, 2)
+  tax           Decimal                @default(0) @db.Decimal(14, 2)
+  total         Decimal                @default(0) @db.Decimal(14, 2)
+  estimatedCost Decimal                @default(0) @db.Decimal(14, 2)
+  createdById   String
+  createdAt     DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime               @updatedAt @db.Timestamptz(3)
+  customer      Customer?              @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  createdBy     User                   @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  items         OrderItem[]
+  payments      Payment[]
+  reservations  InventoryReservation[]
+  movements     InventoryMovement[]
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([createdById])
+  @@index([customerId])
+}
+
+model OrderItem {
+  id                String        @id @default(cuid())
+  orderId           String
+  menuItemId        String
+  recipeVersionId   String
+  name              String
+  quantity          Int
+  unitPrice         Decimal       @db.Decimal(14, 2)
+  estimatedUnitCost Decimal       @db.Decimal(14, 2)
+  notes             String?
+  preparedQuantity  Int           @default(0)
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  menuItem          MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  recipeVersion     RecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([menuItemId])
+  @@index([recipeVersionId])
+}
+
+model Payment {
+  id          String      @id @default(cuid())
+  orderId     String
+  type        PaymentType @default(PAYMENT)
+  amount      Decimal     @db.Decimal(14, 2)
+  method      String
+  reference   String?
+  createdById String
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  createdBy   User        @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([createdAt, type])
+  @@index([createdById])
+}
+
+model InventoryReservation {
+  id           String            @id @default(cuid())
+  orderId      String
+  ingredientId String
+  quantity     Decimal           @db.Decimal(18, 6)
+  status       ReservationStatus @default(ACTIVE)
+  createdAt    DateTime          @default(now()) @db.Timestamptz(3)
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  ingredient   Ingredient        @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, ingredientId])
+  @@index([ingredientId, status])
+}
+
+model InventoryMovement {
+  id             String             @id @default(cuid())
+  ingredientId   String
+  type           MovementType
+  quantity       Decimal            @db.Decimal(18, 6)
+  unitCost       Decimal            @db.Decimal(18, 6)
+  reason         String
+  reference      String?
+  actorId        String
+  orderId        String?
+  goodsReceiptId String?
+  reversalOfId   String?            @unique
+  createdAt      DateTime           @default(now()) @db.Timestamptz(3)
+  ingredient     Ingredient         @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  actor          User               @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  order          Order?             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  goodsReceipt   GoodsReceipt?      @relation(fields: [goodsReceiptId], references: [id], onDelete: Restrict)
+  reversalOf     InventoryMovement? @relation("MovementReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversedBy     InventoryMovement? @relation("MovementReversal")
+
+  @@index([ingredientId, createdAt])
+  @@index([type, createdAt])
+  @@index([orderId])
+  @@index([goodsReceiptId])
+  @@index([actorId])
+}
+
+model PurchaseOrder {
+  id          String              @id @default(cuid())
+  number      Int                 @unique @default(autoincrement())
+  supplierId  String
+  status      PurchaseStatus      @default(DRAFT)
+  expectedAt  DateTime?           @db.Timestamptz(3)
+  notes       String?
+  createdById String
+  createdAt   DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime            @updatedAt @db.Timestamptz(3)
+  supplier    Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdBy   User                @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  items       PurchaseOrderItem[]
+  receipts    GoodsReceipt[]
+
+  @@index([supplierId, createdAt])
+  @@index([status, expectedAt])
+  @@index([createdById])
+}
+
+model PurchaseOrderItem {
+  id               String             @id @default(cuid())
+  purchaseOrderId  String
+  ingredientId     String
+  quantity         Decimal            @db.Decimal(18, 6)
+  receivedQuantity Decimal            @default(0) @db.Decimal(18, 6)
+  unitCost         Decimal            @db.Decimal(18, 6)
+  purchaseOrder    PurchaseOrder      @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  ingredient       Ingredient         @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  receiptItems     GoodsReceiptItem[]
+
+  @@unique([purchaseOrderId, ingredientId])
+  @@index([ingredientId])
+}
+
+model GoodsReceipt {
+  id               String              @id @default(cuid())
+  purchaseOrderId  String
+  invoiceReference String?
+  receivedById     String
+  createdAt        DateTime            @default(now()) @db.Timestamptz(3)
+  purchaseOrder    PurchaseOrder       @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  receivedBy       User                @relation(fields: [receivedById], references: [id], onDelete: Restrict)
+  items            GoodsReceiptItem[]
+  movements        InventoryMovement[]
+
+  @@index([purchaseOrderId])
+  @@index([receivedById])
+  @@index([createdAt])
+}
+
+model GoodsReceiptItem {
+  id                  String            @id @default(cuid())
+  goodsReceiptId      String
+  purchaseOrderItemId String
+  quantity            Decimal           @db.Decimal(18, 6)
+  unitCost            Decimal           @db.Decimal(18, 6)
+  expiresAt           DateTime?         @db.Timestamptz(3)
+  goodsReceipt        GoodsReceipt      @relation(fields: [goodsReceiptId], references: [id], onDelete: Restrict)
+  purchaseOrderItem   PurchaseOrderItem @relation(fields: [purchaseOrderItemId], references: [id], onDelete: Restrict)
+
+  @@unique([goodsReceiptId, purchaseOrderItemId])
+  @@index([purchaseOrderItemId])
+}
+
+model WasteRecord {
+  id            String         @id @default(cuid())
+  ingredientId  String
+  quantity      Decimal        @db.Decimal(18, 6)
+  reason        String
+  estimatedCost Decimal        @db.Decimal(14, 2)
+  status        ApprovalStatus @default(PENDING)
+  createdById   String
+  approvedById  String?
+  approvedAt    DateTime?      @db.Timestamptz(3)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
+  ingredient    Ingredient     @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  createdBy     User           @relation("WasteCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy    User?          @relation("WasteApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+
+  @@index([ingredientId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdById])
+  @@index([approvedById])
+}
+
+model StockAdjustment {
+  id           String         @id @default(cuid())
+  ingredientId String
+  quantity     Decimal        @db.Decimal(18, 6)
+  reason       String
+  status       ApprovalStatus @default(PENDING)
+  createdById  String
+  approvedById String?
+  approvedAt   DateTime?      @db.Timestamptz(3)
+  createdAt    DateTime       @default(now()) @db.Timestamptz(3)
+  ingredient   Ingredient     @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  createdBy    User           @relation("AdjustmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy   User?          @relation("AdjustmentApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+
+  @@index([ingredientId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdById])
+  @@index([approvedById])
+}
+
+model StockCount {
+  id           String           @id @default(cuid())
+  notes        String?
+  status       ApprovalStatus   @default(PENDING)
+  createdById  String
+  approvedById String?
+  approvedAt   DateTime?        @db.Timestamptz(3)
+  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
+  items        StockCountItem[]
+  createdBy    User             @relation("CountCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy   User?            @relation("CountApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+  @@index([createdById])
+  @@index([approvedById])
+}
+
+model StockCountItem {
+  id               String     @id @default(cuid())
+  stockCountId     String
+  ingredientId     String
+  expectedQuantity Decimal    @db.Decimal(18, 6)
+  countedQuantity  Decimal    @db.Decimal(18, 6)
+  stockCount       StockCount @relation(fields: [stockCountId], references: [id], onDelete: Restrict)
+  ingredient       Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+
+  @@unique([stockCountId, ingredientId])
+  @@index([ingredientId])
+}
+
+model IdempotencyRecord {
+  id          String   @id @default(cuid())
+  actorId     String
+  scope       String
+  key         String
+  requestHash String
+  response    Json
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([actorId, scope, key])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  type      String
+  title     String
+  message   String
+  roles     Role[]
+  userId    String?
+  createdAt DateTime           @default(now()) @db.Timestamptz(3)
+  reads     NotificationRead[]
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model NotificationRead {
+  notificationId String
+  userId         String
+  readAt         DateTime     @default(now()) @db.Timestamptz(3)
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([notificationId, userId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
