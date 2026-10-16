@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { restaurantSchema } from './index.js';
+import { accountRequestSchema, restaurantSchema, signInSchema } from './index.js';
+
+describe('account credentials', () => {
+  it('normalizes pasted email addresses before validating without changing passwords', () => {
+    expect(signInSchema.parse({ email: '  OWNER@Example.TEST  ', password: ' passphrase ' })).toEqual({ email: 'owner@example.test', password: ' passphrase ' });
+  });
+  it('applies the same email normalization to account requests', () => {
+    expect(accountRequestSchema.parse({ name: ' New Teammate ', email: ' NEW@EXAMPLE.TEST ', password: 'twelve-characters' })).toMatchObject({ name: 'New Teammate', email: 'new@example.test' });
+  });
+  it('rejects passwords exceeding the bcrypt UTF-8 byte limit on either path', () => {
+    const credentials = { email: 'owner@example.test', password: 'é'.repeat(37) };
+    expect(signInSchema.safeParse(credentials).success).toBe(false);
+    expect(accountRequestSchema.safeParse({ ...credentials, name: 'Teammate' }).success).toBe(false);
+    expect(signInSchema.safeParse({ ...credentials, password: 'é'.repeat(36) }).success).toBe(true);
+  });
+  it('requires a longer password for registration and rejects malformed addresses', () => {
+    expect(signInSchema.safeParse({ email: 'owner@example.test', password: 'short' }).success).toBe(true);
+    expect(accountRequestSchema.safeParse({ name: 'Teammate', email: 'owner@example.test', password: 'short' }).success).toBe(false);
+    expect(signInSchema.safeParse({ email: 'owner@', password: 'password' }).success).toBe(false);
+  });
+});
 
 const restaurant = { id: 'primary', name: 'The Copper Table', currency: 'PKR', timezone: 'Asia/Karachi', taxRate: '0.15', isDemo: true };
 describe('restaurant contract', () => {

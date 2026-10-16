@@ -7,10 +7,10 @@ import { sessionPool } from '../src/lib/session.js';
 
 const app = createApp(prisma, { logging: false });
 const password = process.env.DEMO_PASSWORD!;
-async function login(role = 'owner') {
+async function login(role = 'owner', email = `${role}@newkarachi.test`) {
   const agent = request.agent(app);
   const initial = await agent.get('/api/auth/me').expect(200);
-  const result = await agent.post('/api/auth/login').set('x-csrf-token', initial.body.data.csrfToken).send({ email: `${role}@newkarachi.test`, password }).expect(200);
+  const result = await agent.post('/api/auth/login').set('x-csrf-token', initial.body.data.csrfToken).send({ email, password }).expect(200);
   return { agent, csrf: result.body.data.csrfToken as string, user: result.body.data.user, cookie: result.headers['set-cookie'] };
 }
 afterAll(async () => { await sessionPool.end(); await prisma.$disconnect(); });
@@ -22,7 +22,7 @@ describe('persistent authentication and backend authorization', () => {
     await request(app).post('/api/orders').send({ items: [] }).expect(401);
   });
   it('rotates CSRF and session on login, persists login in PostgreSQL, and keeps cookies HTTP-only', async () => {
-    const { agent, csrf, user, cookie } = await login();
+    const { agent, csrf, user, cookie } = await login('owner', '  OWNER@NEWKARACHI.TEST  ');
     expect(user.role).toBe('OWNER');
     expect(user.passwordHash).toBeUndefined();
     expect(String(cookie)).toMatch(/HttpOnly/);
@@ -36,7 +36,7 @@ describe('persistent authentication and backend authorization', () => {
     const applicant = request.agent(app);
     const csrf = (await applicant.get('/api/auth/me').expect(200)).body.data.csrfToken as string;
     const email = `${randomUUID()}@registration-test.example`;
-    const requestBody = { name: 'New Teammate', email, password };
+    const requestBody = { name: 'New Teammate', email: `  ${email.toUpperCase()}  `, password };
     const notificationCount = await prisma.notification.count({ where: { type: 'ACCOUNT_REGISTRATION_REQUESTED' } });
     const submitted = await applicant.post('/api/auth/register').set('x-csrf-token', csrf).send(requestBody).expect(202);
     expect(submitted.body.data.message).toContain('owner review');
@@ -80,7 +80,7 @@ describe('persistent authentication and backend authorization', () => {
   it('preserves disabled accounts on unrelated edits and immediately revokes disabled sessions', async () => {
     const owner = await login();
     const email = `${randomUUID()}@auth-test.example`;
-    const created = await owner.agent.post('/api/users').set('x-csrf-token', owner.csrf).send({ name: 'Disable test', email, password, role: 'INVENTORY', active: true }).expect(201);
+    const created = await owner.agent.post('/api/users').set('x-csrf-token', owner.csrf).send({ name: 'Disable test', email: `  ${email.toUpperCase()}  `, password, role: 'INVENTORY', active: true }).expect(201);
     const target = request.agent(app);
     const token = (await target.get('/api/auth/me')).body.data.csrfToken;
     await target.post('/api/auth/login').set('x-csrf-token', token).send({ email, password }).expect(200);

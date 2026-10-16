@@ -2,13 +2,14 @@ import { Router } from 'express';
 import { hash } from 'bcryptjs';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+import { accountEmailSchema } from '@nk/shared';
 import { prisma, tx, audit, requireRoles, AppError, disconnectUser, pagination, publish } from '../lib/core.js';
 
 export const adminRouter = Router();
 const safeUser = { id: true, name: true, email: true, role: true, active: true, createdAt: true } as const;
 const role = z.enum(['OWNER', 'MANAGER', 'CASHIER', 'KITCHEN', 'INVENTORY']);
 const password = z.string().min(12).max(72).refine(value => Buffer.byteLength(value) <= 72, 'Password must fit within 72 UTF-8 bytes.');
-const userSchema = z.object({ name: z.string().trim().min(1).max(100), email: z.email().trim().toLowerCase().max(254), password, role, active: z.boolean().default(true) }).strict();
+const userSchema = z.object({ name: z.string().trim().min(1).max(100), email: accountEmailSchema, password, role, active: z.boolean().default(true) }).strict();
 adminRouter.get('/users', requireRoles('OWNER'), async (req, res) => {
   const p = pagination(req);
   const [users, total] = await Promise.all([prisma.user.findMany({ select: safeUser, orderBy: { createdAt: 'desc' }, skip: p.skip, take: p.take }), prisma.user.count()]);

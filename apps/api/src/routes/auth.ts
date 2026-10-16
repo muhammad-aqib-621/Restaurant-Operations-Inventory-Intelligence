@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
 import { hash, compare } from 'bcryptjs';
 import { rateLimit } from 'express-rate-limit';
-import { z } from 'zod';
+import { accountRequestSchema, signInSchema } from '@nk/shared';
 import { prisma, tx, audit, notify, publish, AppError, disconnectUser } from '../lib/core.js';
 import { csrfToken } from '../lib/session.js';
 
@@ -21,11 +21,7 @@ authRouter.get('/me', async (req, res) => {
   res.json({ data: { user: user?.active ? user : null, csrfToken: csrfToken(req) } });
 });
 authRouter.post('/register', registrationLimiter, async (req, res) => {
-  const input = z.object({
-    name: z.string().trim().min(2).max(100),
-    email: z.email().trim().toLowerCase().max(254),
-    password: z.string().min(12).max(72).refine(value => Buffer.byteLength(value) <= 72, 'Password must fit within 72 UTF-8 bytes.'),
-  }).strict().parse(req.body);
+  const input = accountRequestSchema.parse(req.body);
   const passwordHash = await hash(input.password, 12);
   let created = false;
   try {
@@ -47,7 +43,7 @@ authRouter.post('/register', registrationLimiter, async (req, res) => {
   res.status(202).json({ data: registrationResponse });
 });
 authRouter.post('/login', loginLimiter, async (req, res) => {
-  const { email, password } = z.object({ email: z.email().trim().toLowerCase().max(254), password: z.string().min(1).max(72).refine(value => Buffer.byteLength(value) <= 72, 'Password must fit within 72 UTF-8 bytes.') }).strict().parse(req.body);
+  const { email, password } = signInSchema.parse(req.body);
   const account = await prisma.user.findUnique({ where: { email } });
   const matches = await compare(password, account?.passwordHash ?? dummyHash);
   if (!matches || !account?.active) throw new AppError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
@@ -56,7 +52,7 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
   const token = csrfToken(req);
   await tx(t => audit(t, account.id, 'LOGIN', 'User', account.id));
   await new Promise<void>((resolve, reject) => req.session.save(error => error ? reject(error) : resolve()));
-  const { passwordHash: _passwordHash, ...user } = account;
+  const user = { id: account.id, name: account.name, email: account.email, role: account.role, active: account.active };
   res.json({ data: { user, csrfToken: token } });
 });
 authRouter.post('/logout', async (req, res) => {

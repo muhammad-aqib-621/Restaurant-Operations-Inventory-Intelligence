@@ -1,0 +1,69 @@
+.inventory-focus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.inventory-focus button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  border: 1px solid #e1e6d8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #fbfcf8;
+  color: #65715a;
+  font-size: 12px;
+}
+
+.inventory-focus button:hover {
+  background: #f0f3e9;
+}
+
+.inventory-focus button.active {
+  background: #edf2e4;
+  border-color: #a9b995;
+  color: #435535;
+}
+
+.inventory-focus button:focus-visible {
+  outline: 2px solid #60754d;
+  outline-offset: 3px;
+}
+
+.inventory-focus button span {
+  min-width: 20px;
+  border-radius: 5px;
+  padding: 2px 5px;
+  background: #ffffffb3;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.inventory-focus-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 15px;
+  color: #6c785f;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.inventory-focus-summary p {
+  margin: 0;
+}
+
+.inventory-focus-summary .ops-link {
+  margin-left: auto;
+}
+
+@media (max-width: 590px) {
+  .inventory-focus button {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: space-between;
+  }
+}

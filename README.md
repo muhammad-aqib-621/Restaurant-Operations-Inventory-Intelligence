@@ -32,6 +32,13 @@ The demo email domain is a stable local account identifier and is intentionally 
 
 The seed creates marked demonstration suppliers, ingredients, stock and menu recipes. It creates no fabricated sales: the dashboard begins at zero until you record activity. Re-running the seed preserves existing passwords, custom settings, stock balances and catalog edits; it updates the original default demo restaurant name to The Copper Table. Changing `DEMO_PASSWORD` does not reset an existing account. The initializer and seed refuse production mode. The initial **0% tax rate is illustrative**; the owner must configure the applicable restaurant policy.
 
+## Everyday shortcuts
+
+- Open **Search workspace** or press **Ctrl+K / Cmd+K** to find pages available to your role. Use the arrow keys and Enter to navigate, or Escape to close.
+- On Overview, choose **Today**, **Last 7 days**, or **This month**. Service shortcuts open a new sale, the kitchen queue, or reports.
+- Inventory separates **All active**, **Low stock**, **Expiring soon**, and **Inactive** ingredients. Search combines with the selected view, and inventory alerts on Overview open the relevant view directly.
+- Sign-in and account requests normalize pasted email addresses. Password visibility and Caps Lock feedback help avoid typing errors; new accounts still require owner approval. If an authenticated session changes in another tab, review the refreshed workspace before retrying an operation.
+
 ## Demonstrate the workflows
 
 1. Sign in as owner or manager and review Menu & recipes and Inventory. Canonical stock units are grams, millilitres and pieces; inputs also support explicit kilograms/litres conversions.

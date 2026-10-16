@@ -1,31 +1,33 @@
 # Verification results
 
-Verified on 15 October 2026 in the current Linux cloud environment with Node 24.19.0, npm 11.9.0, PostgreSQL 17 and system Chromium. This is evidence for local development and demonstration, plus a local production-container rehearsal. Public deployment and new-task snapshot restoration have not been performed.
+Verified on **17 October 2026 (Asia/Karachi)** in the current Linux cloud environment with Node 24.19.0, npm 11.9.0, PostgreSQL 17 and system Chromium. The development API and frontend run with the repository's combined `npm run dev` command. Public deployment and new-task snapshot restoration have not been performed.
 
 ## Automated checks
 
 | Check | Result |
 | --- | --- |
-| TypeScript checks across all workspaces, API tests and browser configuration | Passed |
-| Shared validation contracts | 6 passed |
+| TypeScript checks across all workspaces and API/browser tests | Passed |
+| Shared contracts, email normalization and password boundaries | 10 passed |
 | HTTP foundation and OpenAPI contracts | 12 passed |
-| React components, command transport and quoted-unit costs | 15 passed |
-| PostgreSQL integration suites | 46 passed |
-| Chromium end-to-end workflows | 8 passed, zero skipped |
+| React components, transport, account boundaries and new workspace tools | 52 passed |
+| PostgreSQL integration suites | 48 passed |
+| Chromium end-to-end workflows | 10 passed, zero skipped |
 | Shared/API/web production compilation | Passed |
 | Migration status | Both migrations applied; schema up to date |
 
-**Total: 87 passing tests.** Unit tests use controlled fixtures; integration and browser suites migrate and seed real, uniquely named disposable PostgreSQL databases and remove only those databases afterward. They never reset the development database.
+**Total: 132 passing tests.** Integration and browser runners migrate and seed uniquely named disposable PostgreSQL databases and remove only those databases afterward. They preserve the development database.
 
-Integration checks cover persistent sessions, CSRF, direct role denials, deactivation/session revocation, user updates, tax/discount calculations, recipe snapshots and unit conversion, competing reservations, exactly-once preparation consumption, reservation release, payment/refund bounds and duplicate handling, stock approvals/stale counts/reversals, partial competing receipts, weighted costs, waste, financial reports and rounding, CSV safety, and database history/balance constraints.
+Email sign-in, account requests and owner-created accounts accept padded uppercase addresses after normalization. Database integration tests verify real sessions and account approval. Browser tests verify real owner login, password visibility, expired anonymous-cookie recovery (a rejected 403 followed by a successful 200), reload persistence, logout/relogin, service-outage recovery and role boundaries. Invalid credentials and unapproved accounts still receive appropriate errors.
 
-Browser checks cover POS → payment → live kitchen update → preparation → ready → completion → receipt, reconciliation with real stock and financial API records, supplier creation and partial receiving, unit-cost conversion, over-receipt rejection, purchase cancellation and waste approval, three restricted role boundaries, responsive keyboard navigation, service-error recovery and logout/relogin.
+Protected writes never replay automatically after a CSRF rejection. Regression tests cover a different user appearing in a refreshed session and verify that the pending payment is sent only once. The application clears cached records and remounts the workspace when account identity or role changes; a separate test verifies that a previous cashier's cart does not survive an account switch.
 
-Additional authenticated browser smoke checks verified the reports page, inventory valuation filter and downloaded CSV, plus optional menu-image URL validation, saving, rendering on menu/POS cards and clearing. The image check restored the original catalog item. These manual checks are separate from the 87 automated tests. The final eight-test browser suite was repeated after the image controls were added and passed with zero skipped tests.
+Workspace search is tested for role-scoped filtering, shortcuts, arrow/Enter navigation, Escape closing and focus restoration. Dashboard date presets handle calendar boundaries and prevent inverted dates. Inventory views use real server alerts, combine with search, preserve deep links/history and distinguish errors from empty data. The browser suite exercises these features together and verifies mobile navigation without page overflow.
 
-The browser test login helper was corrected to wait for completed authentication rather than the transient “Signing in…” button state. Select locators use actual combobox accessible names. These fixes retain the underlying functional assertions. An intermediate failure did not count as a passing run; the final suite completed successfully with all eight tests executed.
+The existing POS/payment/kitchen/receipt, procurement/partial receiving/waste approval, stock reconciliation, reports and direct API authorization workflows remain covered. Direct requests to `/api/readiness` on both the API and frontend proxy report a connected, configured database. A second development seed preserves fixture identities, owner credentials, stock balances, costs and settings. Additional screenshots were inspected at desktop and mobile sizes; the manual real-owner walkthrough reported zero page JavaScript errors.
 
-## Containers and security configuration
+Prisma generation, migrations and tests completed with TLS and artifact checksum verification enabled. This task required approved sandbox access for the Prisma download and local server/browser operations. Installation/startup instructions and the `binaries.prisma.sh` destination are saved in the environment draft. Saving a draft does not publish a snapshot.
+
+## Earlier container and security validation (15 October 2026)
 
 All three Docker targets built successfully: API runtime, migration tooling and nginx web assets. Production Compose configuration validates. A disposable local production rehearsal applied both migrations, provisioned a non-demo owner, checked bootstrap refusal/repeat guards, and ran the actual API/nginx images as non-root processes with read-only filesystems and dropped capabilities. It verified readiness, secure-cookie attributes with trusted proxy headers, login/logout, CSRF rejection, API/SPA/static routing and authenticated WebSocket upgrades. Temporary rehearsal databases, containers, network and secret files were removed; development PostgreSQL was preserved.
 

@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Plus, ShieldCheck, UserRound, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { accountEmailSchema } from '@nk/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUser } from '../App';
 import { dateTime, useCommand, useData, useList, type Role, type User } from '../lib/client';
 import { DataTable, Field, FormMessage, PageTitle, Panel, QueryState, Status } from '../components/operations';
 const roles:Role[]=['OWNER','MANAGER','CASHIER','KITCHEN','INVENTORY'];
-const userSchema=z.object({name:z.string().min(2,'Enter a name.'),email:z.email('Enter a valid email.'),password:z.string().min(12,'Use at least 12 characters.'),role:z.enum(['OWNER','MANAGER','CASHIER','KITCHEN','INVENTORY'])});
+const userSchema=z.object({name:z.string().min(2,'Enter a name.'),email:accountEmailSchema,password:z.string().min(12,'Use at least 12 characters.'),role:z.enum(['OWNER','MANAGER','CASHIER','KITCHEN','INVENTORY'])});
 export function UsersPage(){
   const user=useUser();const query=useList<User>('/users?pageSize=100');const command=useCommand();const[create,setCreate]=useState(false);const[editing,setEditing]=useState<User|null>(null);const[success,setSuccess]=useState('');const{register,handleSubmit,reset,formState:{errors}}=useForm<z.infer<typeof userSchema>>({resolver:zodResolver(userSchema),defaultValues:{role:'CASHIER'}});
   const save=handleSubmit(async(values)=>{await command.run('/users',values);reset();setCreate(false);setSuccess('Team member created. Share their initial password through your secure process.');});
