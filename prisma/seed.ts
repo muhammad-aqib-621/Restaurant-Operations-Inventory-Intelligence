@@ -69,7 +69,11 @@ try {
   await prisma.$transaction(async (db) => {
     await db.restaurantSettings.upsert({
       where: { id: 'primary' }, update: {},
-      create: { id: 'primary', name: 'New Karachi Fast Food', currency: 'PKR', timezone: 'Asia/Karachi', taxRate: '0', isDemo: true },
+      create: { id: 'primary', name: 'The Copper Table', currency: 'PKR', timezone: 'Asia/Karachi', taxRate: '0', isDemo: true },
+    });
+    await db.restaurantSettings.updateMany({
+      where: { id: 'primary', name: 'New Karachi Fast Food', isDemo: true },
+      data: { name: 'The Copper Table' },
     });
     const users = await Promise.all(accounts.map((account) => db.user.upsert({
       where: { email: account.email }, update: {},

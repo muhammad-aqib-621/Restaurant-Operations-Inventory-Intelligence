@@ -32,6 +32,37 @@ describe('persistent authentication and backend authorization', () => {
     const users = await agent.get('/api/users').expect(200);
     expect(users.text).not.toContain('passwordHash');
   });
+  it('accepts registration requests but requires owner approval before login', async () => {
+    const applicant = request.agent(app);
+    const csrf = (await applicant.get('/api/auth/me').expect(200)).body.data.csrfToken as string;
+    const email = `${randomUUID()}@registration-test.example`;
+    const requestBody = { name: 'New Teammate', email, password };
+    const notificationCount = await prisma.notification.count({ where: { type: 'ACCOUNT_REGISTRATION_REQUESTED' } });
+    const submitted = await applicant.post('/api/auth/register').set('x-csrf-token', csrf).send(requestBody).expect(202);
+    expect(submitted.body.data.message).toContain('owner review');
+    const duplicate = await applicant.post('/api/auth/register').set('x-csrf-token', csrf).send(requestBody).expect(202);
+    expect(duplicate.body).toEqual(submitted.body);
+    expect(await prisma.notification.count({ where: { type: 'ACCOUNT_REGISTRATION_REQUESTED' } })).toBe(notificationCount + 1);
+    await applicant.post('/api/auth/login').set('x-csrf-token', csrf).send({ email, password }).expect(401);
+
+    const owner = await login();
+    const pending = await owner.agent.get('/api/users').expect(200);
+    const account = pending.body.data.find((user: { email: string }) => user.email === email);
+    expect(account).toMatchObject({ role: 'CASHIER', active: false });
+    await owner.agent.patch(`/api/users/${account.id}`).set('x-csrf-token', owner.csrf).send({ role: 'INVENTORY', active: true }).expect(200);
+
+    const approvedApplicant = request.agent(app);
+    const approvedCsrf = (await approvedApplicant.get('/api/auth/me').expect(200)).body.data.csrfToken as string;
+    const approved = await approvedApplicant.post('/api/auth/login').set('x-csrf-token', approvedCsrf).send({ email, password }).expect(200);
+    expect(approved.body.data.user).toMatchObject({ email, role: 'INVENTORY', active: true });
+  });
+  it('rejects registration passwords that do not meet the minimum length', async () => {
+    const applicant = request.agent(app);
+    const csrf = (await applicant.get('/api/auth/me').expect(200)).body.data.csrfToken as string;
+    await applicant.post('/api/auth/register').set('x-csrf-token', csrf).send({
+      name: 'New Teammate', email: `${randomUUID()}@registration-test.example`, password: 'too-short',
+    }).expect(400);
+  });
   it('rejects absent, malformed and cross-origin CSRF tokens before mutations', async () => {
     const { agent, csrf } = await login();
     await agent.patch('/api/settings').send({ name: 'Untrusted update' }).expect(403);

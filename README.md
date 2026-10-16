@@ -1,4 +1,4 @@
-# New Karachi Fast Food · Restaurant Operations
+# The Copper Table · Restaurant Operations
 
 A full-stack restaurant workspace for owners, managers, cashiers, kitchen staff and inventory staff. React/Vite connects to an Express API and PostgreSQL through Prisma. The application includes authenticated operations, POS and kitchen orders, versioned recipes, a stock ledger, purchasing, approvals, reports, notifications and audit history.
 
@@ -28,7 +28,9 @@ Open **http://127.0.0.1:5173**. The API uses port **4000**, and PostgreSQL **543
 | `kitchen@newkarachi.test` | Kitchen |
 | `inventory@newkarachi.test` | Inventory |
 
-The seed creates marked demonstration suppliers, ingredients, stock and menu recipes. It creates no fabricated sales: the dashboard begins at zero until you record activity. Re-running the seed preserves existing passwords, settings, stock balances and catalog edits; changing `DEMO_PASSWORD` does not reset an existing account. The initializer and seed refuse production mode. The initial **0% tax rate is illustrative**; the owner must configure the applicable restaurant policy.
+The demo email domain is a stable local account identifier and is intentionally unchanged by the restaurant name.
+
+The seed creates marked demonstration suppliers, ingredients, stock and menu recipes. It creates no fabricated sales: the dashboard begins at zero until you record activity. Re-running the seed preserves existing passwords, custom settings, stock balances and catalog edits; it updates the original default demo restaurant name to The Copper Table. Changing `DEMO_PASSWORD` does not reset an existing account. The initializer and seed refuse production mode. The initial **0% tax rate is illustrative**; the owner must configure the applicable restaurant policy.
 
 ## Demonstrate the workflows
 
@@ -45,7 +47,7 @@ Cancelling before preparation releases reservations. Cancelling after preparatio
 
 | Module | Implemented behavior |
 | --- | --- |
-| Identity | PostgreSQL sessions, bcrypt passwords, CSRF protection, rate-limited login, active-account checks, owner user management |
+| Identity | PostgreSQL sessions, bcrypt passwords, CSRF protection, rate-limited login and account requests, owner-approved staff registration, active-account checks, owner user management |
 | Dashboard | Real payment/refund aggregates, estimated COGS and gross profit, current low-stock/open-purchase counts, sales chart and recent activity |
 | Catalog | Categories, menu descriptions/images, availability/prices, versioned recipes, canonical ingredient conversions, estimated recipe costs and margins |
 | POS and kitchen | Server totals, price/recipe snapshots, stock reservation/consumption, payments/refunds, receipts, status validation and real-time refetch |
@@ -112,6 +114,7 @@ Reporting uses cash-basis sales excluding tax, net of refunds. Estimated gross p
 - **Database unavailable:** inspect `docker compose ps` and `docker compose logs db`, then verify migrations and configuration. Keep credential-bearing `.env`/Compose output private.
 - **Database password changed in `.env`:** existing PostgreSQL volumes retain their original credentials. Restore the matching configuration or rotate credentials using PostgreSQL; restarting does not rewrite a stored password.
 - **Login fails after changing `DEMO_PASSWORD`:** re-seeding preserves existing password hashes. Use the original local value or an explicit owner password reset.
+- **New account cannot sign in:** account requests stay inactive until an owner reviews the request, assigns a role and activates the account under Team members.
 - **Prisma client differs from schema:** run `npm run db:generate`, rebuild and restart the API. Never reset a database as routine troubleshooting.
 - **Downloads denied:** allow the destination confirmed by the error, such as `registry.npmjs.org`, `binaries.prisma.sh`, Docker registry/CDN hosts or Playwright's CDN. Keep TLS, checksum and package verification enabled.
 - **Production login does not set a cookie:** confirm HTTPS, the exact `APP_ORIGIN`, trusted proxy headers and private proxy routing; production cookies are intentionally secure.

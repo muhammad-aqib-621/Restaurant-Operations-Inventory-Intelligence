@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { restaurantSchema } from './index.js';
 
-const restaurant = { id: 'primary', name: 'New Karachi Fast Food', currency: 'PKR', timezone: 'Asia/Karachi', taxRate: '0.15', isDemo: true };
+const restaurant = { id: 'primary', name: 'The Copper Table', currency: 'PKR', timezone: 'Asia/Karachi', taxRate: '0.15', isDemo: true };
 describe('restaurant contract', () => {
   it('preserves decimal text and accepts the Karachi time zone', () => {
     expect(restaurantSchema.parse(restaurant).taxRate).toBe('0.15');

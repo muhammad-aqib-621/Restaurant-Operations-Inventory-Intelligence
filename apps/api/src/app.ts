@@ -46,7 +46,7 @@ export function createApp(database: Database, options: { logging?: boolean; oper
 
   app.get('/api/health', (_req, res) => { res.json({ data: { status: 'ok', service: 'api' } }); });
   app.get('/api/openapi.json', (_req, res) => { res.json(openapi); });
-  app.use('/api/docs', helmet({ contentSecurityPolicy: { directives: { 'script-src': ["'self'"], 'style-src': ["'self'", "'unsafe-inline'"], 'img-src': ["'self'", 'data:'] } } }), swaggerUi.serve, swaggerUi.setup(openapi, { customSiteTitle: 'New Karachi API', swaggerOptions: { persistAuthorization: false } }));
+  app.use('/api/docs', helmet({ contentSecurityPolicy: { directives: { 'script-src': ["'self'"], 'style-src': ["'self'", "'unsafe-inline'"], 'img-src': ["'self'", 'data:'] } } }), swaggerUi.serve, swaggerUi.setup(openapi, { customSiteTitle: 'The Copper Table API', swaggerOptions: { persistAuthorization: false } }));
   app.get('/api/readiness', async (req, res) => {
     try {
       await database.$queryRaw`SELECT 1`;

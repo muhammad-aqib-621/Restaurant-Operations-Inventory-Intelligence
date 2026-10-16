@@ -11,6 +11,8 @@ Authentication uses the HTTP-only `nk.sid` cookie and a PostgreSQL-backed server
 3. Send the current cookie on every protected request. Send the latest `x-csrf-token` and JSON content type on every POST/PATCH, including login and logout. When an Origin header is present, it must match `APP_ORIGIN`.
 4. `POST /api/auth/logout` with `{}` destroys the session, clears the cookie and disconnects its real-time connections.
 
+To request access, submit `{name,email,password}` to `POST /api/auth/register` with the anonymous session cookie and its CSRF token. The password must be 12–72 characters and at most 72 UTF-8 bytes. Registration creates an inactive account and notifies the owner; it does not start a session. The owner reviews it under Team members, assigns the correct role and activates it. The endpoint returns the same generic 202 response for new and already-registered email addresses and is limited to five attempts per hour per IP.
+
 Use the current token after login rather than retaining the anonymous token. Missing/expired authentication returns 401. A role, CSRF or Origin rejection returns 403. Invalid login credentials and deactivated accounts share the same error message. Login permits 15 attempts per 15 minutes per IP and returns 429 when limited. Account deactivation, role changes and password rotation revoke existing sessions and sockets.
 
 All monetary and stock inputs are decimal **strings**, for example `"750.00"`, `"1.250000"` or `"-3"`. Monetary input supports two decimal places; stock quantities and unit costs support six. JSON numbers are used only for integer quantities, booleans, pagination and ordering fields. Unknown fields on business request objects are rejected. Never submit browser-computed order prices, tax, totals or stock balances.
@@ -53,7 +55,7 @@ Paths in the tables are relative to `/api`. The OpenAPI request schemas are the 
 | `GET /health` | Public process liveness; does not check the database |
 | `GET /readiness` | Public database/configuration/active-owner check; 503 until ready |
 | `GET /openapi.json`, `GET /docs` | Public API specification/documentation |
-| `GET /auth/me`, `POST /auth/login`, `POST /auth/logout` | Session/CSRF lifecycle |
+| `GET /auth/me`, `POST /auth/login`, `POST /auth/register`, `POST /auth/logout` | Session lifecycle and owner-approved account requests |
 | `GET /users`, `POST /users`, `PATCH /users/{id}` | Owner-only account management; email is immutable after creation |
 | `GET /settings`, `PATCH /settings` | Read for all roles; owner-only writes |
 | `GET /audit` | Owner-only immutable audit history; `action`, `entityType`, pagination |

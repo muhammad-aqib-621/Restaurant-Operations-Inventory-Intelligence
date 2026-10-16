@@ -1,6 +1,6 @@
 # Architecture and business rules
 
-New Karachi Fast Food is a single-restaurant application organized as an npm workspace monorepo. Browser state comes from the API; PostgreSQL is authoritative for orders, money, stock and history. No financial or inventory records use browser localStorage as their source of truth.
+The Copper Table is a single-restaurant application organized as an npm workspace monorepo. Browser state comes from the API; PostgreSQL is authoritative for orders, money, stock and history. No financial or inventory records use browser localStorage as their source of truth.
 
 | Location | Responsibility |
 | --- | --- |

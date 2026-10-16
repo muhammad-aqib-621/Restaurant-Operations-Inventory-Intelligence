@@ -18,3 +18,37 @@
 .demo-banner{display:flex;gap:8px;align-items:center;padding:11px 14px;background:#f9f2df;border:1px solid #ece0bd;border-radius:7px;color:#ad975f;font-size:11px;margin-bottom:22px}.finance-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid #e3e8d8;border-radius:8px;padding:15px 20px;background:#f9faf5;margin:-5px 0 24px}.finance-strip>div{display:flex;flex-direction:column;gap:5px;border-right:1px solid #e4e9da;padding:0 20px}.finance-strip>div:first-child{padding-left:0}.finance-strip>div:last-child{border:0;padding-right:0}.finance-strip>div>span:first-child{font-size:10px;color:#a3ae94}.finance-strip .money{font-size:13px;color:#8a9776;font-weight:500}@media(max-width:590px){.finance-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;padding:17px}.finance-strip>div{padding:0 10px;border:0}.finance-strip>div:nth-child(odd){padding-left:0}.finance-strip>div>span:first-child{font-size:10px}.finance-strip .money{font-size:14px}.demo-banner{font-size:11px;line-height:1.7}}
 .ops-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.ops-button.ops-button-secondary{background:white;border-color:#dfe4d8;color:#59644e}.ops-button.ops-button-secondary:hover{background:#f1f4ec}.ops-check{display:flex;align-items:center;gap:9px;font-size:13px;color:#7d8971}.ops-check input{width:15px;height:15px}.ops-line{padding:17px;border:1px solid #e1e7d7;border-radius:7px;background:#fcfdf9}.ops-line>legend{font-size:11px;color:#9aa78a;padding:0 7px}.ops-line>.ops-link{margin-top:15px}.ops-callout{padding:13px 16px;background:#f5f7ed;border:1px solid #e6ebd9;border-radius:7px;color:#97a382;font-size:12px;line-height:1.8;margin:15px 0}.ops-section{display:grid;gap:22px;margin-top:22px}.ops-pagination{display:flex;gap:13px;align-items:center;justify-content:flex-end;margin-top:20px;color:#a1ad90;font-size:12px}.ops-pagination>.ops-button{min-height:32px;font-size:11px}.menu-warning{font-size:10px!important;min-height:0!important;color:#bc9a5e!important;margin:9px 0 0!important;line-height:1.5!important}
 .dish-mark .dish-image,.pos-dish-mark .dish-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}.dish-mark>span,.dish-mark>.badge,.pos-dish-add{z-index:2}.dish-mark:has(.dish-image:not([style*="display: none"]))>span:first-of-type{background:#ffffffde;padding:3px 6px;border-radius:4px;color:#7c866b}
+
+.login-form>.brand{display:none}
+.login-story-content>p{max-width:390px}
+.login-story-marks{gap:17px}
+.login-story-marks>span{gap:13px}
+.login-story-marks svg{width:19px;height:19px}
+.login-form .login-access-help{margin-top:22px;padding:14px 15px;border:1px solid #e8eadf;border-radius:7px;background:#f5f6f0;color:#77816c;font-size:11px;line-height:1.8}
+.login-access-help strong{color:#5b684f;font-weight:600}
+.login-access-help em{font-style:normal;font-weight:550;color:#69765c}
+.login-access-help code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.95em;color:#6b684f;overflow-wrap:anywhere}
+.login-mode-toggle{display:block;margin:18px auto 0;padding:6px 8px;border:0;background:none;color:#827246;font-size:12px;font-weight:550;text-align:center}
+.login-mode-toggle:hover{color:#a5802e;text-decoration:underline}
+.login-form .login-security{margin-top:22px}
+.login-form .ops-input{transition:border-color .15s,box-shadow .15s}
+.login-form .ops-input:focus{border-color:#b79a58;box-shadow:0 0 0 3px #b79a581c;outline:none}
+.login-form .button{transition:background .15s,transform .15s}
+.login-form .button:not(:disabled):hover{background:#dfb354;transform:translateY(-1px)}
+.login-form .button:active{transform:translateY(0)}
+.nav-link:focus-visible,.notification-button:focus-visible{outline:2px solid #d7b45d;outline-offset:3px}
+.ops-panel,.stat-card,.menu-card{transition:border-color .16s,box-shadow .16s}
+.ops-panel:hover,.stat-card:hover,.menu-card:hover{border-color:#d8dfce;box-shadow:0 5px 18px #29351c0a}
+@media(max-width:760px){
+  .login-form{padding:34px 0}
+  .login-form>.brand{display:flex;align-self:flex-start;color:#35402e;margin-bottom:34px}
+  .login-form>.brand .brand-mark{width:38px;height:40px}
+  .login-form>.brand>span:last-child{font-size:12px}
+  .login-form>.brand small{color:#89947e;font-size:6px}
+  .login-form .login-icon{display:none}
+  .login-form h2{font-size:31px}
+  .login-form-wrap{padding-top:30px;padding-bottom:22px}
+}
+@media(prefers-reduced-motion:reduce){
+  .login-form .button,.login-form .ops-input,.ops-panel,.stat-card,.menu-card{transition:none}
+}

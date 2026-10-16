@@ -33,7 +33,7 @@ try {
     const settings = await db.restaurantSettings.findUnique({ where: { id: 'primary' } });
     if (settings?.isDemo) throw new BootstrapError('Refusing to bootstrap a production owner into demonstration data. Use the intended production database.');
     if (!settings) await db.restaurantSettings.create({ data: {
-      id: 'primary', name: 'New Karachi Fast Food', currency: 'PKR', timezone: 'Asia/Karachi',
+      id: 'primary', name: 'The Copper Table', currency: 'PKR', timezone: 'Asia/Karachi',
       taxRate: '0', isDemo: false,
     } });
     const owner = await db.user.create({ data: { name: env.OWNER_NAME, email: env.OWNER_EMAIL, passwordHash, role: 'OWNER' } });
